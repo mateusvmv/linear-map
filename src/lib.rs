@@ -312,7 +312,10 @@ impl<K: Eq, V> LinearMap<K, V> {
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
         match self.storage.iter().position(|&(ref k, _)| key == *k) {
             None => Vacant(VacantEntry { map: self, key }),
-            Some(index) => Occupied(OccupiedEntry { map: self, index }),
+            Some(index) => {
+                self.storage[0..index+1].rotate_right(1);
+                Occupied(OccupiedEntry { map: self, index: 0 })
+            },
         }
     }
 }
