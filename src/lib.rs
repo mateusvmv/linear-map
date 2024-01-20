@@ -216,6 +216,12 @@ impl<K: Eq, V> LinearMap<K, V> {
         Values { iter: self.iter() }
     }
 
+    /// An iterator visiting all values mutably in arbitrary order.
+    /// The iterator element type is `&'a mut V`.
+    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+        ValuesMut { iter: self.iter_mut() }
+    }
+
     /// Returns a reference to the value in the map whose key is equal to the given key.
     ///
     /// Returns `None` if the map contains no such key.
@@ -385,7 +391,7 @@ impl<K: Eq, V> From<LinearMap<K, V>> for Vec<(K, V)> {
 
 impl<K: Eq, V> From<Vec<(K, V)>> for LinearMap<K, V> {
     fn from(other: Vec<(K, V)>) -> Self {
-        Self { storage: SmallVec::from_vec(other) }
+        Self { storage: SmallVec::from_vec(other)}
     }
 }
 
@@ -590,6 +596,12 @@ pub struct Keys<'a, K: 'a, V: 'a> {
 pub struct Values<'a, K: 'a, V: 'a> {
     iter: Iter<'a, K, V>,
 }
+/// An iterator yielding mutable references to a `LinearMap`'s values in arbitrary order.
+///
+/// See [`LinearMap::values`](struct.LinearMap.html#method.values_mut) for details.
+pub struct ValuesMut<'a, K: 'a, V: 'a> {
+    iter: IterMut<'a, K, V>,
+}
 
 macro_rules! impl_iter {
     ($typ:ty, $item:ty, $map:expr) => {
@@ -623,6 +635,7 @@ impl_iter! {Iter<'a,K,V>,  (&'a K, &'a V),  |e| (&e.0, &e.1) }
 impl_iter! {IterMut<'a,K,V>,  (&'a K, &'a mut V),  |e| (&e.0, &mut e.1) }
 impl_iter! {Keys<'a,K,V>,  &'a K,  |e| e.0 }
 impl_iter! {Values<'a,K,V>,  &'a V,  |e| e.1 }
+impl_iter! {ValuesMut<'a,K,V>,  &'a mut V,  |e| e.1 }
 
 impl<'a, K, V> Clone for Iter<'a, K, V> {
     fn clone(&self) -> Self {
