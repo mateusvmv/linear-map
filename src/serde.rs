@@ -29,9 +29,9 @@ where
     where
         S: Serializer,
     {
-        let mut state = try!(serializer.serialize_map(Some(self.len())));
+        let mut state = serializer.serialize_map(Some(self.len()))?;
         for (k, v) in self {
-            try!(state.serialize_entry(k, v));
+            state.serialize_entry(k, v)?;
         }
         state.end()
     }
@@ -77,7 +77,7 @@ where
     {
         let mut values = LinearMap::with_capacity(visitor.size_hint().unwrap_or(0));
 
-        while let Some((key, value)) = try!(visitor.next_entry()) {
+        while let Some((key, value)) = visitor.next_entry()? {
             values.insert(key, value);
         }
 
@@ -107,9 +107,9 @@ where
     where
         S: Serializer,
     {
-        let mut state = try!(serializer.serialize_seq(Some(self.len())));
+        let mut state = serializer.serialize_seq(Some(self.len()))?;
         for k in self {
-            try!(state.serialize_element(k));
+            state.serialize_element(k)?;
         }
         state.end()
     }
@@ -154,7 +154,7 @@ where
     {
         let mut values = LinearSet::with_capacity(visitor.size_hint().unwrap_or(0));
 
-        while let Some(key) = try!(visitor.next_element()) {
+        while let Some(key) = visitor.next_element()? {
             values.insert(key);
         }
 
