@@ -15,7 +15,9 @@ use std::iter;
 use std::mem;
 use std::ops;
 use std::slice;
-use std::vec;
+
+extern crate smallvec;
+use smallvec::SmallVec;
 
 use self::Entry::{Occupied, Vacant};
 
@@ -73,20 +75,18 @@ use self::Entry::{Occupied, Vacant};
 /// }
 /// ```
 pub struct LinearMap<K, V> {
-    storage: Vec<(K, V)>,
+    storage: SmallVec<(K, V), 32>,
 }
 
 impl<K: Eq, V> LinearMap<K, V> {
     /// Creates an empty map. This method does not allocate.
     pub fn new() -> Self {
-        LinearMap { storage: vec![] }
+        LinearMap { storage: Default::default() }
     }
 
     /// Creates an empty map with the given initial capacity.
     pub fn with_capacity(capacity: usize) -> Self {
-        LinearMap {
-            storage: Vec::with_capacity(capacity),
-        }
+        Self { storage: SmallVec::with_capacity(capacity) }
     }
 
     /// Returns the number of elements the map can hold without reallocating.
@@ -379,13 +379,13 @@ impl<K: Eq, V: Eq> Eq for LinearMap<K, V> {}
 
 impl<K: Eq, V> From<LinearMap<K, V>> for Vec<(K, V)> {
     fn from(other: LinearMap<K, V>) -> Self {
-        other.storage
+        other.storage.into_vec()
     }
 }
 
 impl<K: Eq, V> From<Vec<(K, V)>> for LinearMap<K, V> {
     fn from(other: Vec<(K, V)>) -> Self {
-        Self { storage: other }
+        Self { storage: SmallVec::from_vec(other) }
     }
 }
 
@@ -448,6 +448,18 @@ pub enum Entry<'a, K: 'a, V: 'a> {
 
     /// A vacant entry.
     Vacant(VacantEntry<'a, K, V>),
+}
+
+impl<'a, K, V: Default> Entry<'a, K, V> {
+    /// Ensures a value is in the entry by inserting the default value if empty,
+    /// and returns a mutable reference to the value in the entry.
+    /// ```
+    pub fn or_default(self) -> &'a mut V {
+        match self {
+            Occupied(entry) => entry.into_mut(),
+            Vacant(entry) => entry.insert(Default::default()),
+        }
+    }
 }
 
 impl<'a, K, V> Entry<'a, K, V> {
@@ -516,7 +528,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
 ///
 /// Acquire through [`IntoIterator`](struct.LinearMap.html#method.into_iter).
 pub struct IntoIter<K, V> {
-    iter: vec::IntoIter<(K, V)>,
+    iter: smallvec::IntoIter<(K, V), 32>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
@@ -547,7 +559,7 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
 ///
 /// See [`LinearMap::drain`](struct.LinearMap.html#method.drain) for details.
 pub struct Drain<'a, K: 'a, V: 'a> {
-    iter: vec::Drain<'a, (K, V)>,
+    iter: smallvec::Drain<'a, (K, V), 32>,
 }
 
 /// An iterator yielding references to a `LinearMap`'s keys and their corresponding values.

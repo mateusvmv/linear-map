@@ -82,9 +82,7 @@ impl<T: Eq> LinearSet<T> {
     #[inline]
 
     pub fn new() -> LinearSet<T> {
-        LinearSet {
-            map: LinearMap::new(),
-        }
+        LinearSet { ..Default::default() }
     }
 
     /// Creates an empty LinearSet with space for at least `n` elements in
@@ -574,13 +572,13 @@ where
 
 impl<K: Eq> From<LinearSet<K>> for Vec<K> {
     fn from(other: LinearSet<K>) -> Self {
-        unsafe { std::mem::transmute(other) }
+        unsafe { std::mem::transmute(other.map.storage.into_vec()) }
     }
 }
 
 impl<K: Eq> From<Vec<K>> for LinearSet<K> {
     fn from(other: Vec<K>) -> Self {
-        unsafe { std::mem::transmute(other) }
+        unsafe { Self { map: LinearMap::from(std::mem::transmute::<_, Vec<(K, ())>>(other)) } }
     }
 }
 
